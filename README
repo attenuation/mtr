@@ -32,7 +32,7 @@ INSTALLING
           --with-biliip && make
   下载以下地址中的数据文件放置至
         /usr/share/BiliIP/BiliIP.dat
-	http://i2.hdslb.com/u_user/d41d8cd98f00b204e9800998ecf8427e.gz
+	http://wsdownload.hdslb.net/BiliIP.dat.gz
   运行时使用以下两种方式：
         MTR_OPTIONS="-R" mtr
         mtr -R
