@@ -27,6 +27,15 @@ INSTALLING
 
 	./bootstrap.sh && ./configure && make
 
+  如果需要biliip解析功能，请使用以下命令编译:
+        ./bootstrap.sh && ./configure --without-gtk --disable-ipv6 \
+          --with-biliip && make
+  下载Downloads中的数据文件放置至
+        /usr/share/BiliIP/BiliIP.dat
+  运行时使用以下两种方式：
+        MTR_OPTIONS="-R" mtr
+        mtr -R
+
   After compiling, install:
 
 	make install
