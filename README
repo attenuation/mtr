@@ -37,8 +37,7 @@
     ./bootstrap.sh 
     ./configure --without-gtk --disable-ipv6 --with-biliip 
     make -j8
-    chmod +s mtr
-    sudo bash -c 'cp mtr /usr/local/bin && mkdir -p /usr/share/BiliIP && wget http://wsdownload.hdslb.net/BiliIP.dat.gz -O - | gzip -dc > /usr/share/BiliIP/BiliIP.dat'
+    sudo bash -c 'cp mtr /usr/local/bin && chmod +s /usr/local/bin/mtr && mkdir -p /usr/share/BiliIP && wget http://wsdownload.hdslb.net/BiliIP.dat.gz -O - | gzip -dc > /usr/share/BiliIP/BiliIP.dat'
 
 ### Show一把
 #### 原生
@@ -48,6 +47,11 @@
 #### 扩展
 
     sudo mtr -R www.bilibili.com
+
+#### 感谢
+
+    IP库国家/城市数据来源：http://www.ipip.net/ 免费版
+    IP库ISP来源：QQWry / 新浪公开IP查询库
 
 #### 截图
 
