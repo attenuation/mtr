@@ -58,6 +58,26 @@ typedef struct in6_addr ip_t;
 typedef struct in_addr ip_t;
 #endif
 
+#ifdef ENABLE_BILIIP
+#define BILIIP_BASE_PTR 5
+
+struct bb_biliip
+{
+    FILE *fp;
+    char *mmap;
+    size_t ptr;
+    size_t size;
+    size_t nCount;
+    unsigned int *index_start;
+    unsigned int *index_end;
+    unsigned int *index_ptr;
+    int rsrc_id;
+};
+extern int ip_resolve;
+extern struct bb_biliip *biliip;
+
+#endif
+
 extern int enablempls;
 extern int dns;
 extern int show_ips;

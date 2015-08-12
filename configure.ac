@@ -20,7 +20,7 @@ AC_CHECK_SIZEOF(unsigned long, 4)
 AC_CHECK_HEADERS(ncurses.h ncurses/curses.h curses.h cursesX.h sys/types.h fcntl.h)
 AC_CHECK_HEADERS(socket.h sys/socket.h sys/xti.h arpa/nameser_compat.h)
 
-AC_SEARCH_LIBS(initscr, [ncurses curses cursesX], ,
+AC_SEARCH_LIBS(initscr, [ncursesw ncurses curses cursesX], ,
   AC_MSG_WARN(Building without curses display support)
   AC_DEFINE(NO_CURSES, 1, [Define if you don't have the curses libraries available.])
   CURSES_OBJ=)
@@ -44,6 +44,13 @@ AM_CONDITIONAL([IPINFO], [test x$ipinfo = xyes])
 AC_ARG_ENABLE(ipv6,
 [  --disable-ipv6          Do not enable IPv6],
 WANTS_IPV6=$enableval, WANTS_IPV6=yes)
+
+AC_ARG_WITH([biliip],
+[  --with-biliip        Do not try to use biliip lookup at all],
+[biliip="${withval}"], [biliip=yes])
+if test "x$biliip" = "xyes"; then
+  AC_DEFINE(ENABLE_BILIIP, [], [Define if you want to have biliip.])
+fi
 
 m4_ifndef([AM_PATH_GTK_2_0], [m4_defun([AM_PATH_GTK_2_0], [AC_MSG_ERROR([
   Could not locate the gtk2 automake macros, these are usually located in

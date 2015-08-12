@@ -96,6 +96,64 @@ void pwcenter(char *str)
 }
 
 
+#ifdef ENABLE_BILIIP
+long biliip_query(struct bb_biliip *ps, unsigned long ip)
+{
+  int i_s = 1;
+  int i_e = ps->nCount;
+  int run = 0;
+  while (i_s <= i_e)
+  {
+    int i_mid = (i_s+i_e)/2;
+
+    if (ps->index_start[i_mid-1] == 0)
+    {
+      ps->ptr = BILIIP_BASE_PTR+(i_mid-2)*sizeof(int);
+      ps->index_start[i_mid-1] = htonl(*(int *)(ps->mmap+ps->ptr));
+    }
+
+    if (ip == ps->index_start[i_mid-1]){
+      return i_mid-1;
+    }else if (ps->index_start[i_mid-1] > ip)
+    {
+      i_e = i_mid-1;
+    }else
+    {
+      i_s = i_mid + 1;
+    }
+    run++;
+  }
+  if (i_e > 1 && ps->index_start[i_e-1] == 0)
+  {
+    ps->ptr = BILIIP_BASE_PTR+(i_e-2)*sizeof(int);
+    ps->index_start[i_e-1] = htonl(*(int *)(ps->mmap+ps->ptr));
+  }
+  if (i_e > 1 && ps->index_end[i_e-1] == 0)
+  {
+    ps->ptr = BILIIP_BASE_PTR+(ps->nCount+i_e-2)*sizeof(int);
+    ps->index_end[i_e-1] = htonl(*(int *)(ps->mmap+ps->ptr));
+  }
+  if (i_e >= 1 && ps->index_start[i_e] && ip>ps->index_start[i_e-1] && ip<=ps->index_end[i_e-1])
+  {
+    return i_e-1;
+  }else
+  {
+    return 0;
+  }
+}
+
+char *biliip_getstr(struct bb_biliip *ps, unsigned int *len)
+{
+  *len = ps->mmap[ps->ptr++];
+  if (!*len) return NULL;
+  char *data;
+  data = ps->mmap+ps->ptr;
+  ps->ptr+=*len;
+  return data;
+}
+#endif
+
+
 int mtr_curses_keyaction(void)
 {
   int c = getch();
@@ -329,6 +387,9 @@ void mtr_curses_hosts(int startstat)
   int y;
   char *name;
 
+  char *country,*province,*city,*district,*isp,*type,*desc;
+  int icountry,iprovince,icity,idistrict,iisp,itype,idesc;
+
   int i, j, k;
   int hd_len;
   char buf[1024];
@@ -357,6 +418,74 @@ void mtr_curses_hosts(int startstat)
       attroff(A_BOLD);
 
       getyx(stdscr, y, __unused_int);
+
+#ifdef ENABLE_BILIIP
+      if (ip_resolve) {
+      long key = biliip_query(biliip,ntohl(*(unsigned long *)addr));
+      if (key != 0)
+      {
+        if (biliip->index_ptr[key] == 0)
+        {
+          biliip->ptr = BILIIP_BASE_PTR+(biliip->nCount*2+key-1)*sizeof(int);
+          biliip->index_ptr[key] = htonl(*(int *)(biliip->mmap+biliip->ptr));
+        }
+        biliip->ptr = biliip->index_ptr[key]+4;
+
+        country = biliip_getstr(biliip,&icountry);
+        province = biliip_getstr(biliip,&iprovince);
+        city = biliip_getstr(biliip,&icity);
+        district = biliip_getstr(biliip,&idistrict);
+        isp = biliip_getstr(biliip,&iisp);
+        type = biliip_getstr(biliip,&itype);
+        desc = biliip_getstr(biliip,&idesc);
+
+        char biliip_buf[64];
+        char *biliip_last = biliip_buf;
+
+        if (startstat > 70) {
+            if (icountry > 0 && country) {
+              biliip_last += sprintf(biliip_last, "%.*s", icountry, country);
+            }
+            move(y, startstat - 50);
+
+            attron(A_BOLD | COLOR_PAIR(4));
+            printw("%s", biliip_buf);
+            attroff(A_BOLD | COLOR_PAIR(4));
+
+            biliip_last = biliip_buf;
+            *biliip_last = '\0';
+
+            if (iprovince > 0 && province) {
+              biliip_last += sprintf(biliip_last, " %.*s", iprovince, province);
+              while (biliip_last > biliip_buf && *(biliip_last-1) == ' ') *--biliip_last = '\0';
+              printw("%s", biliip_buf);
+              biliip_last = biliip_buf;
+              *biliip_last = '\0';
+            }
+            if (icity > 0 && city && (iprovince != icity || strncmp(province, city, icity) != 0)) {
+              biliip_last += sprintf(biliip_last, " %.*s", icity, city);
+              while (biliip_last > biliip_buf && *(biliip_last-1) == ' ') *--biliip_last = '\0';
+              printw("%s", biliip_buf);
+              biliip_last = biliip_buf;
+              *biliip_last = '\0';
+            }
+        }
+
+        if (iisp > 0 && isp) {
+          biliip_last += sprintf(biliip_last, "%.*s", iisp, isp);
+          while (biliip_last > biliip_buf && *(biliip_last-1) == ' ') *--biliip_last = '\0';
+        }
+        if (idesc > 0 && desc) {
+          biliip_last += sprintf(biliip_last, " %.*s", idesc, desc);
+          while (biliip_last > biliip_buf && *(biliip_last-1) == ' ') *--biliip_last = '\0';
+        }
+        move(y, startstat - 25);
+        attron(A_BOLD | COLOR_PAIR(7));
+        printw("%s", biliip_buf);
+        attroff(A_BOLD | COLOR_PAIR(7));
+      }
+    }
+#endif
       move(y, startstat);
 
       /* net_xxx returns times in usecs. Just display millisecs */
@@ -391,6 +520,7 @@ void mtr_curses_hosts(int startstat)
         }
       }
 
+// printw("aasdfasdf");
       /* Multi path */
       for (i=0; i < MAXPATH; i++ ) {
         addrs = net_addrs(at, i);
@@ -648,6 +778,15 @@ void mtr_curses_redraw(void)
     attron(A_BOLD);
     mvprintw(rowstat - 1, 0, " Host");
     mvprintw(rowstat - 1, maxx-hd_len-1, "%s", buf);
+
+#ifdef ENABLE_BILIIP
+    if (ip_resolve) {
+      if (maxx - hd_len - 1 > 70) {
+        mvprintw(rowstat - 2 , maxx-hd_len-1 - 50, "IP解析");
+      }
+      mvprintw(rowstat - 2 , maxx-hd_len-1 - 25, "ISP");
+    }
+#endif
     mvprintw(rowstat - 2, maxx-hd_len-1, "   Packets               Pings");
     attroff(A_BOLD);
 

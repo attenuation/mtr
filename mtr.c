@@ -30,11 +30,13 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/mman.h>
 #include <time.h>
 #include <ctype.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <locale.h>
 
 #include "mtr.h"
 #include "mtr-curses.h"
@@ -71,6 +73,8 @@ char *Hostname = NULL;
 char *InterfaceAddress = NULL;
 char  LocalHostname[128];
 int   dns = 1;
+int   ip_resolve = 0;
+struct bb_biliip *biliip;
 int   show_ips = 0;
 int   enablempls = 0;
 int   cpacketsize = 64;          /* default packet size */
@@ -283,6 +287,9 @@ void parse_arg (int argc, char **argv)
     { "split", 0, 0, 'p' },     /* BL */
     				/* maybe above should change to -d 'x' */
 
+#ifdef ENABLE_BILIIP
+    { "resolve-ip", 0, 0, 'R' },
+#endif
     { "no-dns", 0, 0, 'n' },
     { "show-ips", 0, 0, 'b' },
     { "order", 1, 0, 'o' },	/* fields to display & their order */
@@ -315,7 +322,7 @@ void parse_arg (int argc, char **argv)
   opt = 0;
   while(1) {
     opt = getopt_long(argc, argv,
-		      "hv46F:rwxtglCpnbo:y:zi:c:s:B:Q:ea:f:m:uTSP:Z:M:", long_options, NULL);
+		      "hv46F:rwxtglCpnbo:y:zi:c:s:B:Q:ea:f:m:uTSP:Z:M:R", long_options, NULL);
     if(opt == -1)
       break;
 
@@ -327,6 +334,11 @@ void parse_arg (int argc, char **argv)
       PrintHelp = 1;
       break;
 
+#ifdef ENABLE_BILIIP
+    case 'R':
+      ip_resolve = 1;
+      break;
+#endif
     case 'r':
       DisplayMode = DisplayReport;
       break;
@@ -560,7 +572,7 @@ int main(int argc, char **argv)
 #endif
 
   /*  Get the raw sockets first thing, so we can drop to user euid immediately  */
-
+setlocale(LC_ALL,"");
   if ( ( net_preopen_result = net_preopen () ) ) {
     fprintf( stderr, "mtr: unable to get raw sockets.\n" );
     exit( EXIT_FAILURE );
@@ -621,6 +633,62 @@ int main(int argc, char **argv)
        printf("See the man page for details.\n");
     exit(0);
   }
+
+#ifdef ENABLE_BILIIP
+  if (ip_resolve) {
+    biliip = (struct bb_biliip *)calloc(sizeof(struct bb_biliip), 1);
+    biliip->index_start = NULL;
+    biliip->index_end = NULL;
+    biliip->index_ptr = NULL;
+    biliip->nCount = 0;
+    biliip->fp = fopen("/usr/share/BiliIP/BiliIP.dat", "rb");
+    if (!biliip->fp) {
+      fprintf( stderr, "mtr: Can't load biliip library, read error\n" );
+      exit( EXIT_FAILURE );
+    }
+    fseek(biliip->fp,1,SEEK_SET);
+    if (fread(&biliip->nCount,sizeof(int),1,biliip->fp)!=1){
+      fclose(biliip->fp);
+      fprintf( stderr, "mtr: Can't load biliip library, read error\n" );
+      exit( EXIT_FAILURE );
+    }
+    biliip->nCount = htonl(biliip->nCount);
+
+    biliip->index_start = (unsigned int *)calloc(biliip->nCount+1, sizeof(int));
+    biliip->index_end = (unsigned int *)calloc(biliip->nCount+1, sizeof(int));
+    biliip->index_ptr = (unsigned int *)calloc(biliip->nCount+1, sizeof(int));
+
+    fseek(biliip->fp,0,SEEK_END);
+    biliip->size = ftell(biliip->fp);
+    biliip->mmap=mmap(0, biliip->size, PROT_READ, MAP_SHARED, fileno(biliip->fp), 0);
+
+    fseek(biliip->fp, BILIIP_BASE_PTR, SEEK_SET);
+
+    if (fread((biliip->index_start+1), sizeof(int), biliip->nCount, biliip->fp) != biliip->nCount) {
+
+      fprintf( stderr, "mtr: Can't load biliip library, read error\n" );
+      exit( EXIT_FAILURE );
+    }
+    if (fread((biliip->index_end+1), sizeof(int), biliip->nCount, biliip->fp) != biliip->nCount) {
+
+      fprintf( stderr, "mtr: Can't load biliip library, read error\n" );
+      exit( EXIT_FAILURE );
+    }
+    if (fread((biliip->index_ptr+1), sizeof(int), biliip->nCount, biliip->fp) != biliip->nCount)  {
+
+      fprintf( stderr, "mtr: Can't load biliip library, read error\n" );
+      exit( EXIT_FAILURE );
+    }
+
+    int i;
+    for (i=1;i<=biliip->nCount;i++)
+    {
+      biliip->index_start[i] = htonl(biliip->index_start[i]);
+      biliip->index_end[i] = htonl(biliip->index_end[i]);
+      biliip->index_ptr[i] = htonl(biliip->index_ptr[i]);
+    }
+  }
+#endif
 
   time_t now = time(NULL);
 
