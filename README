@@ -37,7 +37,7 @@
     ./bootstrap.sh 
     ./configure --without-gtk --disable-ipv6 --with-biliip 
     make -j8
-    sudo bash -c 'cp mtr /usr/local/bin && chmod +s /usr/local/bin/mtr && mkdir -p /usr/share/BiliIP && wget http://wsdownload.hdslb.net/BiliIP.dat.gz -O - | gzip -dc > /usr/share/BiliIP/BiliIP.dat'
+    sudo bash -c 'cp mtr /usr/local/bin && mkdir /opt/mtr && chmod +s /usr/local/bin/mtr && mkdir -p /opt/mtr/BiliIP && wget http://wsdownload.hdslb.net/BiliIP.dat.gz -O - | gzip -dc > /opt/mtr/BiliIP.dat'
 
 ### Show一把
 #### 原生
