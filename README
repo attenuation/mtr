@@ -26,6 +26,7 @@
 
     brew install automake
     brew install wget
+    brew install gtk+
 
 ### 下载源码
 
