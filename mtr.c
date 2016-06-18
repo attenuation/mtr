@@ -641,7 +641,7 @@ setlocale(LC_ALL,"");
     biliip->index_end = NULL;
     biliip->index_ptr = NULL;
     biliip->nCount = 0;
-    biliip->fp = fopen("/usr/share/BiliIP/BiliIP.dat", "rb");
+    biliip->fp = fopen("/opt/mtr/BiliIP.dat", "rb");
     if (!biliip->fp) {
       fprintf( stderr, "mtr: Can't load biliip library, read error\n" );
       exit( EXIT_FAILURE );
