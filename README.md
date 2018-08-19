@@ -1,7 +1,8 @@
-## 安装方法
+## Linux安装方法(eg Debian,Ubuntu)
 ### 编译
   如果需要biliip解析功能，请使用以下命令编译:
 
+        apt-get update; apt-get install -y automake libncurses5-dev libncursesw5-dev
         ./bootstrap.sh
         ./configure --without-gtk --disable-ipv6 --with-biliip
         make -j8
@@ -10,8 +11,8 @@
 ### 下载IP库  
   下载以下地址中的数据文件放置至
         
-        /usr/share/BiliIP/BiliIP.dat
-	http://wsdownload.hdslb.net/BiliIP.dat.gz
+        /opt/mtr/BiliIP.dat
+        http://wsdownload.hdslb.net/BiliIP.dat.gz
 	
   运行时使用以下两种方式：
   
