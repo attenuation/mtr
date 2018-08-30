@@ -1,18 +1,24 @@
 ## Linux安装方法(eg Debian,Ubuntu)
 ### 编译
+  安装依赖:
+
+        #Debian系列
+        sudo apt-get update
+        sudo apt-get install -y automake libncurses5-dev libncursesw5-dev
+        #Archlinux
+        sudo pacman -Syu
+        sudo pacman -S base-devel ncurses
   如果需要biliip解析功能，请使用以下命令编译:
 
-        apt-get update; apt-get install -y automake libncurses5-dev libncursesw5-dev
         ./bootstrap.sh
         ./configure --without-gtk --disable-ipv6 --with-biliip
         make -j8
-        make install
+        sudo make install
 
 ### 下载IP库  
-  下载以下地址中的数据文件放置至
-        
-        /opt/mtr/BiliIP.dat
-        http://wsdownload.hdslb.net/BiliIP.dat.gz
+  下载数据文件放置至/opt/mtr/BiliIP.dat
+
+        sudo bash -c 'mkdir /opt/mtr && wget http://wsdownload.hdslb.net/BiliIP.dat.gz -O - | gzip -dc > /opt/mtr/BiliIP.dat'
 	
   运行时使用以下两种方式：
   
